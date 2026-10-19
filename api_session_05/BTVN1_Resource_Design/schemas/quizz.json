@@ -1,0 +1,47 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Quizz",
+  "type": "object",
+  "properties": {
+    "quiz_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "creator_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "duration": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 600
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "published", "closed"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "quiz_id",
+    "title",
+    "creator_id",
+    "duration",
+    "status",
+    "created_at"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Book",
+  "type": "object",
+  "required": ["title"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Book title"
+    },
+    "isbn": {
+      "type": ["string", "null"],
+      "description": "ISBN; must be unique when provided"
+    },
+    "price_vnd": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "stock": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "category_id": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    }
+  },
+  "additionalProperties": false
+}

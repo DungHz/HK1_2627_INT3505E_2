@@ -1,0 +1,74 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "question",
+  "type": "object",
+  "properties": {
+    "question_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "quiz_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "content": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 5000
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "single_choice",
+        "multiple_choice",
+        "true_false",
+        "short_answer"
+      ]
+    },
+    "points": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "order_index": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "choices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "choice_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "is_correct": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "choice_id",
+          "content",
+          "is_correct"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "question_id",
+    "quiz_id",
+    "content",
+    "type",
+    "points",
+    "order_index"
+  ],
+  "additionalProperties": false
+}
