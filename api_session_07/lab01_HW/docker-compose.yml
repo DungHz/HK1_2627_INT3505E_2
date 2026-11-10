@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: devpw
+      POSTGRES_DB: appdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: .
+    environment:
+      DB_URL: postgresql+psycopg://app:devpw@db:5432/appdb
+      SECRET_KEY: local-compose-secret-change-for-real-deployment
+      LOG_LEVEL: INFO
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "flask --app 'product_api.factory:create_app()' db upgrade &&
+             gunicorn --bind 0.0.0.0:5000 --workers 2 wsgi:app"
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/healthz', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:

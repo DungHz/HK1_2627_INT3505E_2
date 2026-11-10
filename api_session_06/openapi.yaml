@@ -1,0 +1,316 @@
+
+openapi: 3.1.0
+
+info:
+  title: Social Network API
+  version: 1.0.0
+  description: >
+    API authentication and post retrieval for a social network.
+    Access tokens use OAuth2 bearer authentication.
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+
+tags:
+  - name: Authentication
+  - name: Posts
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      operationId: login
+      summary: Authenticate a user
+      description: >
+        Authenticate using credentials and issue an access token
+        and a refresh token. No OAuth scope is required before login.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Credentials are invalid; the response does not disclose whether the username exists or the password is incorrect
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+              description: Authentication challenge
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      operationId: refreshToken
+      summary: Refresh an access token
+      description: >
+        Exchange a valid refresh token for a new access token.
+        The refresh token is submitted in the request body.
+        Token rotation is recommended.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Refresh token is invalid, expired, revoked or reused
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /posts/{id}:
+    get:
+      tags:
+        - Posts
+      operationId: getPostById
+      summary: Retrieve a post
+      description: >
+        Retrieve a post if the caller is authorized to view it.
+        Public posts may be readable without authentication.
+        Private and restricted posts require appropriate authorization.
+      security:
+        - bearerAuth:
+            - posts:read
+        - {}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique post identifier
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+      responses:
+        "200":
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Caller lacks the required scope or permission
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Post does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: oauth2
+      description: OAuth2 bearer access token
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            posts:read: Read posts the user is authorized to view
+
+  schemas:
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+          writeOnly: true
+
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+          writeOnly: true
+
+    TokenResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+        - expires_in
+        - refresh_token
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          enum:
+            - Bearer
+        expires_in:
+          type: integer
+          minimum: 1
+          description: Access token lifetime in seconds
+        refresh_token:
+          type: string
+
+    Post:
+      type: object
+      required:
+        - id
+        - author_id
+        - content
+        - visibility
+        - created_at
+      properties:
+        id:
+          type: string
+        author_id:
+          type: string
+        content:
+          type: string
+        visibility:
+          type: string
+          enum:
+            - public
+            - followers
+            - private
+        created_at:
+          type: string
+          format: date-time
+
+    Problem:
+      type: object
+      description: RFC 9457 problem details response
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+      required:
+        - title
+        - status
+
+  responses:
+    BadRequest:
+      description: Malformed request or invalid parameter format
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    Unauthorized:
+      description: Missing or invalid credentials or access token
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+          description: Authentication challenge
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    UnsupportedMediaType:
+      description: Unsupported request Content-Type
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    ValidationError:
+      description: Request body failed semantic validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
