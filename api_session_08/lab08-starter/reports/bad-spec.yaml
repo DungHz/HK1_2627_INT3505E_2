@@ -1,0 +1,16 @@
+openapi: 3.0.3
+info: {title: Bad, version: '1.0', description: Bad spec, contact: {name: x}}
+servers: [{url: http://localhost:5000}]
+tags: [{name: demo, description: demo}]
+paths:
+  /empty:
+    get:
+      operationId: getEmpty
+      description: Returns an object with no declared fields.
+      tags: [demo]
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: {type: object}
