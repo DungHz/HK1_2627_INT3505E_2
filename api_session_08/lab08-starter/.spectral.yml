@@ -1,0 +1,49 @@
+extends: ["spectral:oas"]
+
+rules:
+  # Kiểm tra lỗi (2): response 204 không được khai báo body
+  no-content-on-204:
+    description: HTTP 204 No Content responses must not declare a body.
+    severity: error
+    given: "$.paths[*][*].responses['204']"
+    then:
+      field: content
+      function: falsy
+
+  # Kiểm tra lỗi (3): Book.year phải là integer giống models.Book
+  book-year-is-integer:
+    description: Book.year must be an integer to match the Python model.
+    severity: error
+    given: "$.components.schemas.Book.properties.year"
+    then:
+      field: type
+      function: enumeration
+      functionOptions:
+        values: [integer]
+
+  # CUSTOM RULE: response 200 phải có schema với ít nhất 1 trường
+  response-200-schema-not-empty:
+    description: >
+      Every 200 response must declare a schema with at least one property
+      (an object with properties, or an array whose items have properties).
+    message: "200 response schema has no fields: {{error}}"
+    severity: error
+    given: "$.paths[*][*].responses['200'].content[*].schema"
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - type: object
+              required: [properties]
+              properties:
+                properties: {type: object, minProperties: 1}
+            - type: object
+              required: [type, items]
+              properties:
+                type: {const: array}
+                items:
+                  type: object
+                  required: [properties]
+                  properties:
+                    properties: {type: object, minProperties: 1}

@@ -1,0 +1,7 @@
+
+/Users/hdlinim/DungHz/HK1_2627_INT3505E_2/api_session_08/lab08-starter/reports/bad-spec.yaml
+ 16:22  error  response-200-schema-not-empty  200 response schema has no fields: "schema" property must have required property "properties"                                                                 paths./empty.get.responses[200].content.application/json.schema
+ 16:22  error  response-200-schema-not-empty  200 response schema has no fields: "schema" property must have required property "items"                                                                      paths./empty.get.responses[200].content.application/json.schema
+ 16:22  error  response-200-schema-not-empty  200 response schema has no fields: "schema" property must match a schema in anyOf. None of the schemas matched, see the other errors reported for this value  paths./empty.get.responses[200].content.application/json.schema
+
+✖ 3 problems (3 errors, 0 warnings, 0 infos, 0 hints)

@@ -3,14 +3,25 @@ info:
   title: Books API — Lab 08
   version: 1.0.0
   description: |
-    Educational API. LAB 2: three *intentional* contract defects remain.
-    The application is the reference for intended behavior.
+    Educational Books API for UET.IT3298 session 8.
+    The Flask application is the reference for intended behavior.
+  contact:
+    name: Lab08 Books API
+    url: http://localhost:5000
 servers:
   - url: http://localhost:5000
+tags:
+  - name: health
+    description: Service health check
+  - name: books
+    description: CRUD operations on the Book resource
 paths:
   /health:
     get:
       operationId: healthCheck
+      summary: Health check
+      description: Returns ok when the service is ready.
+      tags: [health]
       responses:
         '200':
           description: Service is ready
@@ -18,21 +29,29 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [status]
                 properties:
                   status: {type: string}
   /books:
     get:
-      # LAB 2 intentional issue 1: operationId is missing.
+      # FIX 1: thêm operationId
+      operationId: listBooks
+      summary: List books
+      description: Lists books ordered by id, 20 items per page, optional filters.
+      tags: [books]
       parameters:
         - in: query
           name: author
+          description: Exact author match
           schema: {type: string}
         - in: query
           name: year
+          description: Publication year
           schema: {type: integer}
         - in: query
           name: page
-          schema: {type: integer, minimum: 1}
+          description: 1-based page number
+          schema: {type: integer, minimum: 1, default: 1}
       responses:
         '200':
           description: List books
@@ -41,8 +60,12 @@ paths:
               schema:
                 type: array
                 items: {$ref: '#/components/schemas/Book'}
+        '400': {$ref: '#/components/responses/BadRequest'}
     post:
       operationId: createBook
+      summary: Create a book
+      description: Creates a book. ISBN, if provided, must be unique.
+      tags: [books]
       requestBody:
         required: true
         content:
@@ -61,18 +84,26 @@ paths:
       - in: path
         name: id
         required: true
+        description: Book id (positive integer)
         schema: {type: integer, minimum: 1}
     get:
       operationId: getBook
+      summary: Get a book
+      description: Returns a single book by id.
+      tags: [books]
       responses:
         '200':
           description: Book found
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Book'}
+        '400': {$ref: '#/components/responses/BadRequest'}
         '404': {$ref: '#/components/responses/NotFound'}
     put:
       operationId: updateBook
+      summary: Replace a book
+      description: Replaces all fields; omitted optional fields become null.
+      tags: [books]
       requestBody:
         required: true
         content:
@@ -86,15 +117,17 @@ paths:
               schema: {$ref: '#/components/schemas/Book'}
         '400': {$ref: '#/components/responses/BadRequest'}
         '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
     delete:
       operationId: deleteBook
+      summary: Delete a book
+      description: Deletes a book. A second delete of the same id returns 404.
+      tags: [books]
       responses:
+        # FIX 2: 204 không có content
         '204':
           description: Deleted (response has no body)
-          # LAB 2 intentional issue 2: 204 incorrectly declares a body.
-          content:
-            application/json:
-              schema: {type: object}
+        '400': {$ref: '#/components/responses/BadRequest'}
         '404': {$ref: '#/components/responses/NotFound'}
 components:
   schemas:
@@ -106,7 +139,7 @@ components:
         id: {type: integer, minimum: 1}
         title: {type: string, minLength: 1, maxLength: 200}
         author: {type: string, minLength: 1, maxLength: 200}
-        # LAB 2 intentional issue 3: actual Book.year is integer/null.
+        # FIX 3: year là integer/null như models.Book
         year: {type: integer, nullable: true, minimum: 1450, maximum: 2100}
         isbn: {type: string, pattern: '^\d{13}$', nullable: true}
     BookInput:
@@ -138,7 +171,7 @@ components:
         application/json:
           schema: {$ref: '#/components/schemas/Error'}
     BadRequest:
-      description: Invalid input
+      description: Invalid input or invalid id
       content:
         application/json:
           schema: {$ref: '#/components/schemas/Error'}
