@@ -60,7 +60,7 @@ Ba lỗi **cố ý** trong `openapi.yaml`:
 
 ```bash
 npm install -g @stoplight/spectral-cli
-spectral lint openapi.yaml --ruleset .spectral.yml
+npx --package=@stoplight/spectral-cli spectral lint openapi.yaml --ruleset .spectral.yml
 ```
 
 `.spectral.yml` đã có hai rule riêng kiểm tra (2) và (3); `spectral:oas` kiểm tra các quy tắc nền, bao gồm operationId. Hãy sửa 3 lỗi trong spec và **tự bổ sung custom rule** kiểm tra response 200 có schema không rỗng. Lưu ý: Spectral linter không tự đối chiếu code Flask; một spec hợp lệ vẫn có thể khác hành vi thực tế. Hãy dùng pytest + jsonschema để kiểm chứng response.

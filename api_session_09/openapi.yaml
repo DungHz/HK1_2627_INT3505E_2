@@ -1,0 +1,101 @@
+openapi: 3.1.0
+info:
+  title: User API
+  version: "2.0.0"
+  description: |
+    v1 deprecated từ 2026-11-18, sunset 2027-05-31T23:59:59Z.
+    Sau sunset, mọi endpoint /api/v1 trả 410 Gone.
+paths:
+  /api/v1/users/{uid}:
+    get:
+      summary: Lấy user (v1, full_name)
+      deprecated: true
+      parameters: [{ $ref: "#/components/parameters/Uid" }]
+      responses:
+        "200":
+          description: OK
+          headers:
+            Sunset: { $ref: "#/components/headers/Sunset" }
+            Deprecation: { $ref: "#/components/headers/Deprecation" }
+            Link: { $ref: "#/components/headers/Link" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserV1" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "410": { $ref: "#/components/responses/Gone" }
+  /api/v2/users/{uid}:
+    get:
+      summary: Lấy user (v2, first_name + last_name)
+      parameters: [{ $ref: "#/components/parameters/Uid" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserV2" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v2/users:
+    post:
+      summary: Tạo user (v2)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserV2Create" }
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location: { schema: { type: string }, description: URL của user mới }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserV2" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+components:
+  parameters:
+    Uid: { name: uid, in: path, required: true, schema: { type: integer } }
+  headers:
+    Sunset: { schema: { type: string }, description: "HTTP-date (RFC 8594)" }
+    Deprecation: { schema: { type: string }, description: "@unix-timestamp (RFC 9745)" }
+    Link: { schema: { type: string }, description: 'rel="successor-version"' }
+  schemas:
+    UserV1:
+      type: object
+      required: [id, full_name, email]
+      properties:
+        id: { type: integer }
+        full_name: { type: string, example: "Văn Nguyễn" }
+        email: { type: string, format: email }
+    UserV2:
+      type: object
+      required: [id, first_name, last_name, email]
+      properties:
+        id: { type: integer }
+        first_name: { type: string, example: "Văn" }
+        last_name: { type: string, example: "Nguyễn" }
+        email: { type: string, format: email }
+    UserV2Create:
+      type: object
+      required: [first_name, last_name, email]
+      properties:
+        first_name: { type: string, minLength: 1 }
+        last_name: { type: string, minLength: 1 }
+        email: { type: string, format: email }
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        message: { type: string }
+        fields: { type: object, additionalProperties: { type: string } }
+  responses:
+    NotFound:
+      description: Không tìm thấy
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Gone:
+      description: Version đã sunset
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Error:
+      description: Lỗi request
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
